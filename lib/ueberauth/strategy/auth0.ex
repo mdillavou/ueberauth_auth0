@@ -59,6 +59,21 @@ defmodule Ueberauth.Strategy.Auth0 do
     end
   end
 
+  @doc """
+  Handles the callback from an app that has already acquired a token.
+  """
+  def handle_callback!(%Conn{params: %{"access_token" => access_token}} = conn) do
+    token = OAuth2.AccessToken.new(access_token)
+    client = Ueberauth.Strategy.Auth0.OAuth.client([token: token])
+
+    # verify that the access token's aud matches our client_id for auth0.
+    if check_access_token(conn, client) do
+      fetch_user(conn, client)
+    else
+      set_errors!(conn, [error("token", "Token verification failed")])
+    end
+  end
+
   @doc false
   def handle_callback!(conn) do
     set_errors!(conn, [error("missing_code", "No code received")])
@@ -133,6 +148,16 @@ defmodule Ueberauth.Strategy.Auth0 do
       last_name: user["family_name"],
       image: user["picture"]
     }
+  end
+
+  @doc """
+  Verify the access token with Auth0.
+  It is especially important to verify the
+  aud matches our client_id
+  """
+  def check_access_token(_conn, _client) do
+    # implement later
+    true
   end
 
   defp option(conn, key) do
