@@ -32,8 +32,13 @@ defmodule Ueberauth.Strategy.Auth0 do
   """
   def handle_request!(conn) do
     scopes = conn.params["scope"] || option(conn, :default_scope)
-    opts = [scope: scopes]
-    opts = Keyword.put(opts, :redirect_uri, callback_url(conn))
+
+    # Pass through any params from the original request
+    opts =
+      conn.params
+      |> Map.put(:scope, scopes)
+      |> Map.put(:redirect_uri, callback_url(conn))
+
     module = option(conn, :oauth2_module)
 
     callback_url =
